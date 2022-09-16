@@ -20,6 +20,7 @@ Desenvolva uma função que retorne a fórmula para determinado número
 
 Entrada: 80 Saida: (4+4*4)*4
 """
+import contextlib
 from itertools import product
 
 import pytest
@@ -35,8 +36,8 @@ def valid(response: str) -> bool:
     return response.count("4") == 4
 
 
-def generate_expressions(values: list[int]):
-    valid_operations = ["+", "-", "*", "/", "**"]
+def generate_expressions(values: list[str]):
+    valid_operations = ["+", "-", "*", "/"]
 
     signals = product(valid_operations, repeat=(len(values) - 1))
     for s in signals:
@@ -44,8 +45,8 @@ def generate_expressions(values: list[int]):
         resp += f"{values[-1]}".replace(" ", "")
 
         # stackoverflow
-        if resp in ("4**4**4**4", "4**4**4*4"):
-            continue
+        # if resp in ("4**4**4**4", "4**4**4*4"):
+        #     continue
         yield resp
         if "/" in resp:
             yield f"({resp.replace('/', ')/', 1)}".replace("(4)", "4")
@@ -57,14 +58,29 @@ def generate_expressions(values: list[int]):
             yield f"{resp.replace('4*4', '(4*4)', 1)}"
 
 
+def evaluate(exp: str, expected: int) -> bool:
+    result = False
+    with contextlib.suppress(TypeError, SyntaxError):
+        s = exp.replace("4!", "24")
+        result = eval(s) == expected
+    return result
+
+
 def solution(input_) -> str:
-    for exp in generate_expressions([4, 4, 4, 4]):
-        # print(f"{exp} -> {input_} =>", end="")
-        if eval(exp) == input_ and valid(exp):
-            # print("Sim!")
-            return exp
-        # print("Não!")
-    raise NotFoundError
+    for case in (
+        ["4", "4", "4", "4"],
+        ["4!", "4", "4", "4"],
+        ["4!", "4!", "4", "4"],
+        ["44", "4", "4"],
+        ["44", "4!", "4"],
+    ):
+        for exp in generate_expressions(case):
+            # print(f"{exp} -> {input_} =>", end="")
+            if evaluate(exp, input_) and valid(exp):
+                # print("Sim!")
+                return exp
+            # print("Não!")
+    return "-1"
 
 
 ###########################
@@ -79,46 +95,47 @@ test_cases = [
     (("4+4-(4/4)", "4+4-4/4"), 7),
     (("4x(4+4)/4", "4+4+4-4"), 8),
     (("4+4+(4/4)", "4+4+4/4"), 9),
-    # (("(44-4)/4",), 10), # TODO: TEM A RESPOSTA
-    # (("",), 11),
+    (("(44-4)/4", "(4!+4*4)/4"), 10),
+    (("(4!+4)/4+4",), 11),
     (("(4-4/4)*4",), 12),
-    # (("(4!)-((44)/4)",), 13),
-    # (("",), 14),
+    (("(4!+4!+4)/4",), 13),
+    (("4!/4+4+4",), 14),
     (("4*4-4/4",), 15),
     (("4+4+4+4",), 16),
     (("4*4+4/4",), 17),
-    # (("",), 18),
-    # (("(4!)-((4/4)+4)",), 19),
+    (("4!-4-4/4",), 19),
     (("(4+4/4)*4",), 20),
-    # (("((4/4)-4)+(4!)",), 21),
-    # (("4!-(4+4)/4",), 22), # TODO: TEM A RESPOSTA
-    # (("",), 23),
+    (("((4/4)-4)+(4!)", "4!+4/4-4"), 21),
+    (("4!-(4+4)/4", "4!/4+4*4"), 22),
+    (("(4!*4-4)/4",), 23),
     (("4+4+4*4",), 24),
-    # (("",), 25),
-    # (("(4+4)/4+4!",), 26), # TODO: TEM A RESPOSTA
-    # (("(4!)-((4/4)-4)",), 27),
+    (("(4!*4+4)/4",), 25),
+    (("4!+4!/4-4",), 26),
+    (("(4!)-((4/4)-4)", "4!+4-4/4"), 27),
     (("(4+4)*4-4",), 28),
-    # (("(4/4)+4+4!",), 29),  # TODO: TEM A RESPOSTA
-    # (("",), 30),
-    # (("",), 31),
+    (("(4/4)+4+4!", "4!+4+4/4"), 29),
+    (("(4!+4!*4)/4",), 30),
     (("4*4+4*4",), 32),
-    # (("",), 33),
-    # (("",), 34),
-    # (("((44)/4)+(4!)",), 35),
+    (("4!+4!/4+4",), 34),
     (("(4+4)*4+4",), 36),
-    # (("",), 37),
-    # (("",), 38),
-    # (("",), 39),
-    # (("",), 40),
-    # (("",), 41),
-    # (("",), 42),
-    # (("",), 43),
-    # (("((4+4)*4)+(4!)",), 56),
+    (("44-4!/4",), 38),
+    (("(4!/4+4)*4",), 40),
+    (("44-4/4",), 43),
+    (("4!+4!+4+4",), 56),
     (("4*4*4-4",), 60),
     (("4+4*4*4",), 68),
-    # (("((44)+4)+(4!)",), 72),
-    # (("((4+4)-4)*(4!)",), 96),
-    # (("",), 100),
+    (("44+4!+4", "(4!-4!/4)*4"), 72),
+    (("(4!+4-4)*4"), 96),
+    (("(4!+4/4)*4",), 100),
+    # to be solved
+    # (("(44/4)+4!",), 35),
+    # (("",), 18),
+    # (("",), 31),
+    # (("",), 33),
+    # (("",), 37),
+    # (("",), 39),
+    # (("",), 41),
+    # (("",), 42),
 ]
 
 
